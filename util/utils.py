@@ -249,3 +249,21 @@ def epoch_acc(model, batch_size, sql_data, table_data, save_results=False):
         start = end
 
     return tot_acc_num / len(sql_data), one_acc_num/len(sql_data)
+
+
+def generate_ground_truth_where_seq(q, col, query):
+    ret_seq = []
+    for cur_q, cur_col, cur_query in zip(q, col, query):
+        # print(cur_query)
+        connect_col = [tok for col_tok in cur_col for tok in col_tok + [',']]
+        all_toks = SQL_SYNTAX_TOKENS + connect_col + [None] + cur_q + [None]
+        # print(all_toks)
+        cur_seq = [all_toks.index('<BEG>')]  # position of beg in the list
+        if 'WHERE' in cur_query:
+            cur_where_query = cur_query[cur_query.index('WHERE'):]
+            # print(cur_where_query)
+            cur_seq = cur_seq + list(map(lambda tok: all_toks.index(tok)
+                                         if tok in all_toks else 0, cur_where_query))
+        cur_seq.append(all_toks.index('<END>'))
+        ret_seq.append(cur_seq)
+    return ret_seq
